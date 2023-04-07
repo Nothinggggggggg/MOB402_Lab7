@@ -9,6 +9,8 @@ var Book = require("../models/book");
 
 const bodyParser = require("body-parser");
 
+const request = require('request');
+
 // // parse requests of content-type - application/json
 router.use(bodyParser.json());
 
@@ -88,7 +90,18 @@ router.post("/signin", async function (req, res) {
         homeObj.token = "JWT " + token;
         homeObj.user = user.toObject();
         console.log("homeObj", homeObj);
-        return res.redirect("/api/book");
+
+        //res.header('Authorization', 'JWT ' + token);
+
+        //res.header['Authorization'] = 'JWT ' + token;
+
+        request.get('http://localhost:3000/api/book', {
+          headers: { 'Authorization': 'JWT ' + token }
+        }, function (error, response, body) {
+          res.send(body);
+        });
+
+        //return res.redirect("/api/book");
       } else {
         // res.status(401).send({ success: false, msg: 'Authentication failed. Wrong password.' });
         signInObj.notify = "Authentication failed. Wrong password.";
@@ -127,12 +140,13 @@ router.post(
 
 router.get("/book", async function (req, res) {
   passport.authenticate("jwt", { session: false });
-      console.log("headers", req.headers);
+  console.log('Vao get api book');
+  console.log("headers: ", req.headers);
   var token = getToken(req.headers);
   if (token) {
     let books = await Book.find();
 
-     res.json(books);
+    res.json(books);
     return res.render("home", homeObj);
   } else {
     return res.status(403).send({ success: false, msg: "Unauthorized." });
@@ -140,7 +154,7 @@ router.get("/book", async function (req, res) {
 });
 
 getToken = (headers) => {
-    console.log(headers && headers.authorization);
+  console.log(headers && headers.authorization);
   if (headers && headers.authorization) {
     var parted = headers.authorization.split(" ");
     if (parted.length === 2) {
